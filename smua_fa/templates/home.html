@@ -1,0 +1,47 @@
+<html>
+  <head>
+    <title>SMU Bulk Booking Rejection System</title>
+  </head>
+  <body>
+    <div style="display: flex; flex-direction: column; align-items:center;">
+      <div>
+        <div style="margin-bottom:2rem;">
+          <h1>SMU Bulk Booking Rejection System</h1>
+          <div style="border-style:solid; width:30rem; padding-left:1rem">
+            <h3>How to use?</h3>
+            <p>Input Excel Sheet and Error Message, and press submit!</p>
+          </div>
+        </div>
+
+        <form method="POST" action="{% url 'home' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div style="margin-bottom:1rem;">
+              <a>Error message:</a>
+              {{ input_form.input_field }}
+            </div>
+            <div>
+              <a>Choose an Excel/CSV file: </a>
+              {{ input_form.file }}
+            </div>
+            <button type="submit" style="margin: 2rem 0 2rem; height: 3rem; width: auto;" id="submitButton" onclick="downloadFiles()">Submit</button>
+        </form>
+      </div>
+
+      <!--<div>
+        <div>
+          <h2>System Information</h2>
+        </div>
+        {% if content and content != 'Unsupported file type' %}
+        <h4>Uploaded File Content</h4>
+        {{ content|safe }}
+        {% else %}
+        <p style="color:red;">{{ content }} </p>
+        {% endif %}
+
+        {% if input_value %}
+        <p>You've entered: {{ input_value }}</p>
+        {% endif %}
+      </div>-->
+    </div>
+  </body>
+</html>
