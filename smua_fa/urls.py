@@ -1,6 +1,6 @@
 from django.urls import path
-from . import views
+from smua_fa.views import home 
 
 urlpatterns = [
-    path('', views.home, name='home')
+    path('', home, name='home')
 ]
