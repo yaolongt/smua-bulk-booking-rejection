@@ -17,7 +17,6 @@ class InputForm(forms.Form):
 def separate_files(success_data, error_data):
     success_data_response, error_data_response = None, None
     if len(success_data) > 0:
-        print(success_data[0])
         success = pd.DataFrame(success_data, columns=headers)
         success_buffer = io.BytesIO()
         success.to_csv(success_buffer, index=False, date_format="%d-%b-%Y")
@@ -26,7 +25,7 @@ def separate_files(success_data, error_data):
         success_data_response['Content-Disposition'] = f'attachment; filename={success_file}'
 
     if len(error_data) > 0:
-        err = pd.DataFrame(error_data)
+        err = pd.DataFrame(error_data, columns=headers)
         err_buffer = io.BytesIO()
         err.to_csv(err_buffer, index=False, date_format="%d-%b-%Y")
         err_buffer.seek(0)
@@ -80,12 +79,11 @@ def home(request):
 
       # check file extensions
       if file_extension == 'xlsx':
-        df = pd.read_excel(file).fillna('')
-        content = df.head(5).to_html()
-        csv_arr = manipulate_excel_data(df)
-        headers = csv_arr[0]
+        df = pd.read_excel(file).fillna('-')
+        np_arr = np.asarray(df, dtype='object')
+        headers = df.columns
         
-        success_data, error_data = split_data(csv_arr[1:], input_value)
+        success_data, error_data = split_data(np_arr[1:], input_value)
 
         success_data_response, error_data_response = separate_files(success_data, error_data)
 
