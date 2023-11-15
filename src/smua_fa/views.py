@@ -15,26 +15,25 @@ class InputForm(forms.Form):
   file = forms.FileField(label="Upload CSV or Excel Sheet")
   
 def separate_files(success_data, error_data):
-  success = pd.DataFrame(success_data, columns=headers)
-  err = pd.DataFrame(error_data, columns=headers)
-  
-  success_buffer = io.BytesIO()
-  err_buffer = io.BytesIO()
-  
-  success.to_csv(success_buffer, index=False, date_format="%d-%b-%Y")
-  err.to_csv(err_buffer, index=False, date_format="%d-%b-%Y")
+    success_data_response, error_data_response = None, None
+    if len(success_data) > 0:
+        print(success_data[0])
+        success = pd.DataFrame(success_data, columns=headers)
+        success_buffer = io.BytesIO()
+        success.to_csv(success_buffer, index=False, date_format="%d-%b-%Y")
+        success_buffer.seek(0)
+        success_data_response = HttpResponse(success_buffer.getvalue(), content_type='application/csv')
+        success_data_response['Content-Disposition'] = f'attachment; filename={success_file}'
 
-  # Set buffer position to the beginning
-  success_buffer.seek(0)
-  err_buffer.seek(0)
+    if len(error_data) > 0:
+        err = pd.DataFrame(error_data)
+        err_buffer = io.BytesIO()
+        err.to_csv(err_buffer, index=False, date_format="%d-%b-%Y")
+        err_buffer.seek(0)
+        error_data_response = HttpResponse(err_buffer.getvalue(), content_type='application/csv')
+        error_data_response['Content-Disposition'] = f'attachment; filename={error_file}'
 
-  success_data_response = HttpResponse(success_buffer.getvalue(), content_type='application/csv')
-  success_data_response['Content-Disposition'] = f'attachment; filename={success_file}'
-
-  error_data_response = HttpResponse(err_buffer.getvalue(), content_type='application/csv')
-  error_data_response['Content-Disposition'] = f'attachment; filename={error_file}'
-
-  return success_data_response, error_data_response
+    return success_data_response, error_data_response
   
 def split_data(original_data, error_msg):
   error_idx = set()
@@ -60,8 +59,8 @@ def manipulate_excel_data(data):
   """
   csv_data = data.to_csv(index=False).strip().splitlines()
   csv_data_arr = [line.split(",") for line in csv_data]
-  np_arr = np.array(csv_data_arr)
-  
+  np_arr = np.asarray(csv_data_arr, dtype="object")
+
   return np_arr
   
 
@@ -94,27 +93,10 @@ def home(request):
         combined_response['Content-Disposition'] = 'attachment; filename="Bulk_Booking_Files.zip'
 
         with zipfile.ZipFile(combined_response, 'w') as zip_file:
-          zip_file.writestr(success_file,success_data_response.content)
-          zip_file.writestr(error_file,error_data_response.content)
-
-        return combined_response
-
-      elif file_extension == 'csv':
-        df = pd.read_csv(file, header=0).fillna('')
-        content = df.head(5).to_html()
-        headers = df.columns.to_list()
-        df_array = np.array(df)
-        
-        success_data, error_data = split_data(df_array, input_value)
-
-        success_data_response, error_data_response = separate_files(success_data, error_data)
-
-        combined_response = HttpResponse(content_type='application/zip')
-        combined_response['Content-Disposition'] = 'attachment; filename="Bulk_Booking_Files.zip'
-
-        with zipfile.ZipFile(combined_response, 'w') as zip_file:
-          zip_file.writestr(success_file,success_data_response.content)
-          zip_file.writestr(error_file,error_data_response.content)
+          if success_data_response != None:
+                zip_file.writestr(success_file,success_data_response.content)
+          if error_data_response != None:
+                zip_file.writestr(error_file,error_data_response.content)
 
         return combined_response
       else:
